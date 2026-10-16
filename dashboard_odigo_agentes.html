@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Odigo · Actividad de agentes</title>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg:#f4f7fb; --panel:#ffffff; --panel-2:#f8fafc; --text:#152033; --muted:#64748b;
+      --line:#e2e8f0; --brand:#5b5bd6; --brand-2:#7c3aed; --teal:#0f9f9a; --blue:#3b82f6;
+      --amber:#d97706; --red:#dc2626; --green:#16835a; --shadow:0 14px 34px rgba(15,23,42,.08);
+      --radius:18px; --heat-rgb:91,91,214;
+    }
+    html[data-theme="dark"] {
+      --bg:#0b1020; --panel:#111827; --panel-2:#172033; --text:#e7edf7; --muted:#93a4ba;
+      --line:#273449; --brand:#8b8cf0; --brand-2:#a78bfa; --teal:#2dd4bf; --blue:#60a5fa;
+      --amber:#f59e0b; --red:#f87171; --green:#34d399; --shadow:0 18px 44px rgba(0,0,0,.24);
+      --heat-rgb:139,140,240;
+    }
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    button,input,select{font:inherit} button{cursor:pointer}.hidden{display:none!important}
+    .app{min-height:100vh}.topbar{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--panel) 91%,transparent);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+    .topbar-inner{max-width:1540px;margin:auto;padding:15px 24px;display:flex;align-items:center;gap:14px}.brand{display:flex;align-items:center;gap:12px;min-width:250px}.brandmark{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--brand),var(--brand-2));display:grid;place-items:center;color:white;font-weight:800;box-shadow:0 8px 18px rgba(91,91,214,.28)}
+    .brand h1{font-size:15px;margin:0;font-weight:780;letter-spacing:.1px}.brand small{display:block;color:var(--muted);font-weight:500;margin-top:1px}
+    .tabs{display:flex;gap:4px;flex:1;justify-content:center}.tab{border:0;background:transparent;color:var(--muted);padding:9px 12px;border-radius:10px;font-weight:650}.tab.active{background:var(--panel-2);color:var(--text)}
+    .actions{display:flex;gap:8px;align-items:center}.btn{border:1px solid var(--line);background:var(--panel);color:var(--text);padding:9px 12px;border-radius:11px;font-weight:700;display:inline-flex;align-items:center;gap:7px}.btn:hover{border-color:color-mix(in srgb,var(--brand) 45%,var(--line))}.btn.primary{background:var(--brand);border-color:var(--brand);color:white}.btn.ghost{background:transparent}.icon-btn{width:38px;height:38px;padding:0;display:grid;place-items:center}
+    main{max-width:1540px;margin:auto;padding:24px}.empty{min-height:62vh;display:grid;place-items:center}.empty-card{max-width:670px;text-align:center;background:var(--panel);border:1px solid var(--line);border-radius:24px;padding:48px 42px;box-shadow:var(--shadow)}.empty-icon{width:76px;height:76px;margin:0 auto 20px;border-radius:22px;background:linear-gradient(135deg,color-mix(in srgb,var(--brand) 15%,var(--panel)),color-mix(in srgb,var(--teal) 14%,var(--panel)));display:grid;place-items:center;font-size:31px}.empty h2{font-size:28px;margin:0 0 10px}.empty p{color:var(--muted);font-size:15px;margin:0 auto 22px;max-width:550px}.privacy{margin-top:14px;color:var(--muted);font-size:12px}
+    .toolbar{display:grid;grid-template-columns:minmax(180px,1.35fr) repeat(3,minmax(150px,.9fr)) minmax(190px,1fr);gap:10px;margin-bottom:14px}.control{background:var(--panel);border:1px solid var(--line);border-radius:13px;min-height:48px;padding:7px 10px;display:flex;align-items:center;gap:8px}.control label{font-size:11px;color:var(--muted);font-weight:750;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}.control select{width:100%;border:0;outline:0;background:transparent;color:var(--text);font-weight:650}.picker-wrap{position:relative}.picker-button{width:100%;border:0;background:transparent;color:var(--text);text-align:left;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.picker-panel{position:absolute;top:calc(100% + 7px);left:0;right:0;min-width:280px;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);z-index:40;padding:10px;display:none}.picker-wrap.open .picker-panel{display:block}.picker-search{width:100%;padding:9px 10px;border:1px solid var(--line);background:var(--panel-2);color:var(--text);border-radius:9px;outline:0}.picker-tools{display:flex;gap:6px;margin:8px 0}.mini{font-size:11px;border:0;background:var(--panel-2);color:var(--text);padding:5px 8px;border-radius:7px;font-weight:700}.picker-list{max-height:260px;overflow:auto;padding-right:3px}.checkrow{display:flex;gap:8px;align-items:flex-start;padding:7px 6px;border-radius:8px}.checkrow:hover{background:var(--panel-2)}.checkrow input{margin-top:2px}.checkrow .sub{display:block;font-size:11px;color:var(--muted)}
+    .notice{background:color-mix(in srgb,var(--amber) 8%,var(--panel));border:1px solid color-mix(in srgb,var(--amber) 30%,var(--line));border-radius:13px;padding:10px 13px;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:9px}.notice strong{font-weight:800}.notice span{color:var(--muted)}
+    .kpis{display:grid;grid-template-columns:repeat(6,minmax(140px,1fr));gap:12px;margin-bottom:14px}.kpi{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px 17px;min-height:112px}.kpi .label{font-size:12px;color:var(--muted);font-weight:700}.kpi .value{font-size:26px;font-weight:820;letter-spacing:-.03em;margin-top:8px}.kpi .hint{font-size:11px;color:var(--muted);margin-top:4px}.kpi .accent{color:var(--brand)}
+    .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px 17px;box-shadow:0 1px 0 rgba(15,23,42,.015);min-width:0}.card h3{margin:0;font-size:15px}.card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}.card-sub{color:var(--muted);font-size:12px;margin-top:3px}.span-7{grid-column:span 7}.span-5{grid-column:span 5}.span-12{grid-column:span 12}.span-6{grid-column:span 6}.chart-scroll{max-height:620px;overflow:auto}.chartbox{position:relative;min-height:300px}.small-select{border:1px solid var(--line);border-radius:9px;background:var(--panel-2);color:var(--text);padding:6px 8px;max-width:220px}
+    .insights{display:grid;gap:9px}.insight{background:var(--panel-2);border-radius:12px;padding:11px 12px;border:1px solid var(--line)}.insight b{display:block;font-size:12px}.insight span{display:block;color:var(--muted);font-size:12px;margin-top:3px}.dot{width:8px;height:8px;border-radius:50%;display:inline-block;background:var(--brand);margin-right:6px}
+    .table-wrap{overflow:auto;max-height:650px;border:1px solid var(--line);border-radius:12px}.data-table{border-collapse:separate;border-spacing:0;width:100%;min-width:980px}.data-table th,.data-table td{padding:10px 11px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}.data-table th:first-child,.data-table td:first-child,.data-table th:nth-child(2),.data-table td:nth-child(2){text-align:left}.data-table th{position:sticky;top:0;background:var(--panel-2);z-index:2;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.045em}.data-table tr:last-child td{border-bottom:0}.data-table tbody tr:hover td{background:color-mix(in srgb,var(--brand) 4%,var(--panel))}.pill{display:inline-flex;align-items:center;padding:3px 7px;border-radius:999px;font-size:11px;font-weight:750;background:var(--panel-2);border:1px solid var(--line)}.pill.warn{color:var(--amber);border-color:color-mix(in srgb,var(--amber) 35%,var(--line));background:color-mix(in srgb,var(--amber) 7%,var(--panel))}.pill.ok{color:var(--green);border-color:color-mix(in srgb,var(--green) 30%,var(--line));background:color-mix(in srgb,var(--green) 6%,var(--panel))}
+    .heat-wrap{overflow:auto;max-height:70vh;border:1px solid var(--line);border-radius:12px}.heat{border-collapse:separate;border-spacing:3px;min-width:100%;padding:6px}.heat th{position:sticky;top:0;background:var(--panel);z-index:4;padding:8px 6px;font-size:11px;color:var(--muted);min-width:92px;max-width:130px}.heat th:first-child{left:0;z-index:6;min-width:205px;text-align:left}.heat td{height:38px;min-width:92px;text-align:center;border-radius:7px;font-size:11px;font-weight:750}.heat .agent{position:sticky;left:0;z-index:3;background:var(--panel);text-align:left;padding:6px 9px;min-width:205px}.heat .agent span{display:block;color:var(--muted);font-size:10px;font-weight:500}.heat-legend{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:11px}.gradient{width:110px;height:8px;border-radius:99px;background:linear-gradient(90deg,rgba(var(--heat-rgb),.08),rgba(var(--heat-rgb),.9))}
+    .period-grid{display:grid;grid-template-columns:minmax(0,8fr) minmax(300px,4fr);gap:14px}.file-list{display:grid;gap:9px}.file-card{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel-2)}.file-icon{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;background:color-mix(in srgb,var(--green) 10%,var(--panel));color:var(--green);font-weight:800}.file-card b{display:block;font-size:12px}.file-card span{display:block;color:var(--muted);font-size:11px}.remove{border:0;background:transparent;color:var(--muted);font-size:18px;line-height:1}.remove:hover{color:var(--red)}
+    .modal-backdrop{position:fixed;inset:0;background:rgba(3,7,18,.55);display:grid;place-items:center;z-index:100;padding:20px}.modal{width:min(850px,96vw);max-height:90vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:22px;box-shadow:0 30px 80px rgba(0,0,0,.34)}.modal-head{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid var(--line)}.modal-head h2{margin:0;font-size:18px}.modal-body{padding:20px}.dropzone{border:1.5px dashed color-mix(in srgb,var(--brand) 45%,var(--line));border-radius:17px;padding:32px;text-align:center;background:color-mix(in srgb,var(--brand) 3%,var(--panel));transition:.2s}.dropzone.drag{background:color-mix(in srgb,var(--brand) 10%,var(--panel));border-color:var(--brand)}.dropzone h3{margin:0 0 6px}.dropzone p{margin:0 0 15px;color:var(--muted)}.queue{margin-top:15px;display:grid;gap:8px}.queue-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:11px;padding:10px 12px}.queue-row small{display:block;color:var(--muted);margin-top:2px}.queue-row.error{border-color:color-mix(in srgb,var(--red) 40%,var(--line));background:color-mix(in srgb,var(--red) 5%,var(--panel))}.modal-foot{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-top:1px solid var(--line);color:var(--muted);font-size:12px}
+    .spinner{width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}@keyframes spin{to{transform:rotate(360deg)}}
+    .view{display:none}.view.active{display:block}.muted{color:var(--muted)}.right{margin-left:auto}.nowrap{white-space:nowrap}
+    @media(max-width:1100px){.kpis{grid-template-columns:repeat(3,1fr)}.span-7,.span-5,.span-6{grid-column:span 12}.toolbar{grid-template-columns:repeat(2,1fr)}.period-grid{grid-template-columns:1fr}.tabs{display:none}}
+    @media(max-width:680px){main{padding:14px}.topbar-inner{padding:11px 14px}.brand{min-width:0;flex:1}.brand small{display:none}.actions .btn:not(.primary){display:none}.toolbar{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}.kpi .value{font-size:22px}.empty-card{padding:34px 20px}.modal-body{padding:14px}.dropzone{padding:24px 14px}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand"><div class="brandmark">O</div><div><h1>Actividad de agentes</h1><small>Odigo · análisis de tiempos</small></div></div>
+      <nav class="tabs" id="tabs">
+        <button class="tab active" data-view="summary">Resumen</button>
+        <button class="tab" data-view="heatmap">Mapa de calor</button>
+        <button class="tab" data-view="periods">Comparar periodos</button>
+        <button class="tab" data-view="data">Datos</button>
+      </nav>
+      <div class="actions">
+        <button class="btn ghost icon-btn" id="themeBtn" title="Cambiar tema">◐</button>
+        <button class="btn" id="exportBtn" title="Exportar tabla de agentes a CSV">Exportar</button>
+        <button class="btn primary" id="openUpload">＋ Cargar Excel</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="empty" id="emptyState">
+      <div class="empty-card">
+        <div class="empty-icon">⇧</div>
+        <h2>Analiza varios reportes en segundos</h2>
+        <p>Carga uno o varios Excel de “Tabla Actividades Remoto Grupo”. El dashboard identifica agentes, periodos y actividades, detecta solapes y destaca dónde se concentra más tiempo.</p>
+        <button class="btn primary" id="emptyUpload">Seleccionar archivos</button>
+        <div class="privacy">Procesamiento 100% local en el navegador. Los Excel no se envían a ningún servidor.</div>
+      </div>
+    </section>
+
+    <section id="dashboard" class="hidden">
+      <div class="toolbar">
+        <div class="control"><label>Modo</label><select id="mergeMode"><option value="safe">Consolidado sin solapes</option><option value="sum">Sumar archivos seleccionados</option></select></div>
+        <div class="control picker-wrap" id="filesPicker"><label>Periodos</label><button class="picker-button" type="button"></button><div class="picker-panel"><input class="picker-search" placeholder="Buscar archivo o periodo"><div class="picker-tools"><button class="mini all">Todos</button><button class="mini none">Ninguno</button></div><div class="picker-list"></div></div></div>
+        <div class="control picker-wrap" id="agentsPicker"><label>Agentes</label><button class="picker-button" type="button"></button><div class="picker-panel"><input class="picker-search" placeholder="Buscar agente"><div class="picker-tools"><button class="mini all">Todos</button><button class="mini none">Ninguno</button></div><div class="picker-list"></div></div></div>
+        <div class="control picker-wrap" id="activitiesPicker"><label>Actividades</label><button class="picker-button" type="button"></button><div class="picker-panel"><input class="picker-search" placeholder="Buscar actividad"><div class="picker-tools"><button class="mini all">Todas</button><button class="mini none">Ninguna</button></div><div class="picker-list"></div></div></div>
+        <div class="control"><label>Ranking</label><select id="rankMetric"><option value="activityHours">Horas en actividades</option><option value="activityPct">% del tiempo conectado</option><option value="attentionHours">Horas de atención</option><option value="logonHours">Horas conectado</option><option value="availablePct">% disponible</option></select></div>
+      </div>
+
+      <div class="notice hidden" id="overlapNotice"><b>⚠</b><div><strong>Hay periodos solapados.</strong> <span id="overlapText"></span></div></div>
+
+      <div class="view active" id="view-summary">
+        <div class="kpis">
+          <div class="kpi"><div class="label">Agentes</div><div class="value" id="kpiAgents">—</div><div class="hint" id="kpiAgentsHint"></div></div>
+          <div class="kpi"><div class="label">Tiempo conectado</div><div class="value" id="kpiLogon">—</div><div class="hint">Suma de duración total log on</div></div>
+          <div class="kpi"><div class="label">Otras actividades</div><div class="value accent" id="kpiActivity">—</div><div class="hint" id="kpiActivityHint"></div></div>
+          <div class="kpi"><div class="label">Atención</div><div class="value" id="kpiAttention">—</div><div class="hint" id="kpiAttentionHint"></div></div>
+          <div class="kpi"><div class="label">Disponible</div><div class="value" id="kpiAvailable">—</div><div class="hint" id="kpiAvailableHint"></div></div>
+          <div class="kpi"><div class="label">Cobertura</div><div class="value" id="kpiCoverage">—</div><div class="hint" id="kpiCoverageHint"></div></div>
+        </div>
+
+        <div class="grid">
+          <article class="card span-7">
+            <div class="card-head"><div><h3>Comparativa por agente</h3><div class="card-sub" id="agentChartSub">Ranking de tiempo</div></div><span class="pill" id="agentCountPill"></span></div>
+            <div class="chart-scroll"><div class="chartbox" id="agentChartBox"><canvas id="agentChart"></canvas></div></div>
+          </article>
+          <article class="card span-5">
+            <div class="card-head"><div><h3>Dónde se va el tiempo</h3><div class="card-sub">Actividades ordenadas por horas acumuladas</div></div></div>
+            <div class="chart-scroll"><div class="chartbox" id="activityChartBox"><canvas id="activityChart"></canvas></div></div>
+          </article>
+          <article class="card span-7">
+            <div class="card-head"><div><h3>Composición del tiempo conectado</h3><div class="card-sub">Disponible, atención, otras actividades y diferencia no clasificada</div></div></div>
+            <div class="chart-scroll"><div class="chartbox" id="compositionChartBox"><canvas id="compositionChart"></canvas></div></div>
+          </article>
+          <article class="card span-5">
+            <div class="card-head"><div><h3>Puntos destacados</h3><div class="card-sub">Se recalculan con los filtros actuales</div></div></div>
+            <div class="insights" id="insights"></div>
+          </article>
+          <article class="card span-12">
+            <div class="card-head"><div><h3>Detalle por agente</h3><div class="card-sub">Ordenado según la métrica de ranking seleccionada</div></div></div>
+            <div class="table-wrap"><table class="data-table"><thead><tr><th>Agente</th><th>Periodo efectivo</th><th>Conectado</th><th>Disponible</th><th>Atención</th><th>Actividades</th><th>% actividades</th><th>Actividad principal</th><th>Tiempo principal</th><th>Rechazos</th></tr></thead><tbody id="agentTableBody"></tbody></table></div>
+          </article>
+        </div>
+      </div>
+
+      <div class="view" id="view-heatmap">
+        <article class="card">
+          <div class="card-head"><div><h3>Mapa agente × actividad</h3><div class="card-sub">Detecta rápidamente concentraciones de tiempo y diferencias entre personas</div></div><div style="display:flex;align-items:center;gap:10px"><select id="heatMetric" class="small-select"><option value="hours">Horas</option><option value="pct">% del tiempo conectado</option><option value="minutesPerDay">Minutos por día efectivo</option></select><div class="heat-legend">Menos <span class="gradient"></span> Más</div></div></div>
+          <div class="heat-wrap" id="heatContainer"></div>
+        </article>
+      </div>
+
+      <div class="view" id="view-periods">
+        <div class="period-grid">
+          <article class="card">
+            <div class="card-head"><div><h3>Comparación normalizada entre archivos</h3><div class="card-sub">Los archivos se comparan por separado, sin sumar periodos que se solapan</div></div><select id="periodMetric" class="small-select"><option value="activityPct">Todas las actividades · % conectado</option><option value="activityHoursPerAgent">Todas las actividades · h/agente</option><option value="attentionPct">Atención · % conectado</option><option value="availablePct">Disponible · % conectado</option></select></div>
+            <div class="chartbox" id="periodChartBox"><canvas id="periodChart"></canvas></div>
+          </article>
+          <article class="card">
+            <div class="card-head"><div><h3>Archivos cargados</h3><div class="card-sub">Puedes quitar un archivo sin volver a cargar el resto</div></div></div>
+            <div class="file-list" id="fileCards"></div>
+          </article>
+        </div>
+        <article class="card" style="margin-top:14px">
+          <div class="card-head"><div><h3>Resumen por archivo</h3><div class="card-sub">Útil para validar periodos, agentes y posibles solapes</div></div></div>
+          <div class="table-wrap"><table class="data-table"><thead><tr><th>Archivo</th><th>Periodo</th><th>Días</th><th>Agentes</th><th>Conectado</th><th>Actividades</th><th>% actividades</th><th>Atención</th><th>Estado</th></tr></thead><tbody id="periodTableBody"></tbody></table></div>
+        </article>
+      </div>
+
+      <div class="view" id="view-data">
+        <article class="card">
+          <div class="card-head"><div><h3>Datos consolidados</h3><div class="card-sub">Vista tabular de los datos utilizados por el dashboard</div></div><button class="btn" id="exportBtn2">Exportar CSV</button></div>
+          <div class="table-wrap"><table class="data-table"><thead><tr><th>Agente</th><th>Email</th><th>Días efectivos</th><th>Conectado h</th><th>Disponible h</th><th>Atención h</th><th>Actividades h</th><th>% actividades</th><th>Principal</th><th>Principal h</th></tr></thead><tbody id="rawTableBody"></tbody></table></div>
+        </article>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="modal-backdrop hidden" id="uploadModal">
+  <div class="modal">
+    <div class="modal-head"><div><h2>Cargar reportes de actividad</h2><div class="muted">Selecciona varios Excel a la vez</div></div><button class="remove" id="closeUpload">×</button></div>
+    <div class="modal-body">
+      <div class="dropzone" id="dropzone">
+        <h3>Arrastra aquí tus Excel</h3>
+        <p>Admite .xlsx y .xls. También soporta los XLSX de Odigo con rango interno A1 incorrecto.</p>
+        <input id="fileInput" type="file" accept=".xlsx,.xls" multiple class="hidden" />
+        <button class="btn primary" id="browseBtn">Elegir archivos</button>
+      </div>
+      <div class="queue" id="uploadQueue"></div>
+    </div>
+    <div class="modal-foot"><span>Los datos se procesan únicamente en este navegador.</span><span id="modalStatus"></span></div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const $ = s => document.querySelector(s);
+  const $$ = s => [...document.querySelectorAll(s)];
+  const state = {
+    datasets: [], selectedFiles: new Set(), selectedAgents: new Set(), selectedActivities: new Set(),
+    charts: {}, activeView: 'summary', mergeMode: 'safe', rankMetric: 'activityHours',
+    allAgentsSelected: true, allActivitiesSelected: true, allFilesSelected: true
+  };
+  const nf0 = new Intl.NumberFormat('es-ES',{maximumFractionDigits:0});
+  const nf1 = new Intl.NumberFormat('es-ES',{minimumFractionDigits:1,maximumFractionDigits:1});
+  const pct1 = v => `${nf1.format(isFinite(v)?v:0)}%`;
+  const hours = s => `${nf1.format((s||0)/3600)} h`;
+  const escapeHtml = v => String(v ?? '').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+  const slug = s => String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+  const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+  const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
+
+  function parseDMY(s){
+    const m=String(s||'').match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/); if(!m)return null;
+    return new Date(Date.UTC(+m[3],+m[2]-1,+m[1]));
+  }
+  function fmtDate(d){ return d ? new Intl.DateTimeFormat('es-ES',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'UTC'}).format(d) : '—'; }
+  function daysInclusive(a,b){ if(!a||!b)return 1; return Math.max(1,Math.round((b-a)/86400000)+1); }
+  function overlaps(a,b){ return a.startDate<=b.endDate && b.startDate<=a.endDate; }
+  function rangeLabel(ds){ return ds.startDate && ds.endDate ? (ds.startDate.getTime()===ds.endDate.getTime()?fmtDate(ds.startDate):`${fmtDate(ds.startDate)} – ${fmtDate(ds.endDate)}`) : ds.fileName; }
+
+  function parseTitleRange(title, fileName){
+    const t=String(title||'');
+    let m=t.match(/\bde\s+(\d{1,2}\/\d{1,2}\/\d{4})(?:\s+a\s+(\d{1,2}\/\d{1,2}\/\d{4}))?/i);
+    if(m){ const a=parseDMY(m[1]), b=parseDMY(m[2]||m[1]); return {startDate:a,endDate:b}; }
+    const fm=String(fileName||'').match(/(\d{4})-(\d{2})-(\d{2})/);
+    if(fm){ const d=new Date(Date.UTC(+fm[1],+fm[2]-1,+fm[3])); return {startDate:d,endDate:d}; }
+    const d=new Date(Date.UTC(1970,0,1)); return {startDate:d,endDate:d,unknown:true};
+  }
+
+  function colIndex(ref){ const m=String(ref||'').match(/^([A-Z]+)/i); if(!m)return 0; let n=0; for(const ch of m[1].toUpperCase()) n=n*26+(ch.charCodeAt(0)-64); return n-1; }
+  function xmlChildrenByLocal(node, name){ return [...node.getElementsByTagNameNS('*',name)]; }
+  function textOf(node){ return node ? node.textContent || '' : ''; }
+  function resolveZipPath(base, target){
+    if(target.startsWith('/')) return target.replace(/^\//,'');
+    const parts=(base+'/'+target).split('/'), out=[];
+    for(const p of parts){ if(!p||p==='.')continue; if(p==='..')out.pop(); else out.push(p); }
+    return out.join('/');
+  }
+
+  async function parseXlsxRobust(file){
+    if(!window.JSZip) throw new Error('No se pudo cargar JSZip. Comprueba la conexión a Internet.');
+    const buf=await file.arrayBuffer();
+    const zip=await JSZip.loadAsync(buf);
+    const wbEntry=zip.file('xl/workbook.xml');
+    if(!wbEntry) throw new Error('No parece un XLSX válido.');
+    const parser=new DOMParser();
+    const wbXml=parser.parseFromString(await wbEntry.async('text'),'application/xml');
+    const sheet=xmlChildrenByLocal(wbXml,'sheet')[0];
+    if(!sheet) throw new Error('El libro no contiene hojas.');
+    const rid=sheet.getAttribute('r:id') || sheet.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships','id');
+    let sheetPath='xl/worksheets/sheet1.xml';
+    const relEntry=zip.file('xl/_rels/workbook.xml.rels');
+    if(relEntry && rid){
+      const relXml=parser.parseFromString(await relEntry.async('text'),'application/xml');
+      const rel=xmlChildrenByLocal(relXml,'Relationship').find(x=>x.getAttribute('Id')===rid);
+      if(rel) sheetPath=resolveZipPath('xl',rel.getAttribute('Target'));
+    }
+    const shared=[];
+    const ssEntry=zip.file('xl/sharedStrings.xml');
+    if(ssEntry){
+      const ssXml=parser.parseFromString(await ssEntry.async('text'),'application/xml');
+      for(const si of xmlChildrenByLocal(ssXml,'si')) shared.push(xmlChildrenByLocal(si,'t').map(textOf).join(''));
+    }
+    const sheetEntry=zip.file(sheetPath);
+    if(!sheetEntry) throw new Error('No se pudo localizar la primera hoja del XLSX.');
+    const shXml=parser.parseFromString(await sheetEntry.async('text'),'application/xml');
+    const rows=[]; let maxCol=0;
+    for(const r of xmlChildrenByLocal(shXml,'row')){
+      const rowNo=(+r.getAttribute('r')||rows.length+1)-1;
+      const arr=rows[rowNo] || [];
+      const cells=[...r.children].filter(x=>x.localName==='c');
+      for(const c of cells){
+        const idx=colIndex(c.getAttribute('r')); maxCol=Math.max(maxCol,idx);
+        const t=c.getAttribute('t')||'n'; const vNode=[...c.children].find(x=>x.localName==='v');
+        let val='';
+        if(t==='inlineStr') val=xmlChildrenByLocal(c,'t').map(textOf).join('');
+        else if(t==='s') val=shared[+(textOf(vNode))] ?? '';
+        else if(t==='b') val=textOf(vNode)==='1';
+        else if(t==='str') val=textOf(vNode);
+        else { const raw=textOf(vNode); val=raw===''?'':Number(raw); if(Number.isNaN(val))val=raw; }
+        arr[idx]=val;
+      }
+      rows[rowNo]=arr;
+    }
+    for(let i=0;i<rows.length;i++){ rows[i]=rows[i]||[]; rows[i].length=Math.max(rows[i].length,maxCol+1); }
+    return rows;
+  }
+
+  async function parseViaSheetJS(file){
+    if(!window.XLSX) throw new Error('No se pudo cargar el lector XLS/XLSX.');
+    const data=await file.arrayBuffer();
+    const wb=XLSX.read(data,{type:'array',cellDates:false,raw:true});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    if(!ws) throw new Error('No se encontró ninguna hoja.');
+    let range=ws['!ref']||'A1:A1';
+    // En algunos reportes Odigo !ref indica A1 aunque haya celdas fuera. Recalcular desde las claves disponibles.
+    const refs=Object.keys(ws).filter(k=>/^[A-Z]+\d+$/.test(k));
+    if(refs.length){
+      let minR=1e9,minC=1e9,maxR=0,maxC=0;
+      for(const ref of refs){const d=XLSX.utils.decode_cell(ref);minR=Math.min(minR,d.r);minC=Math.min(minC,d.c);maxR=Math.max(maxR,d.r);maxC=Math.max(maxC,d.c);}
+      range=XLSX.utils.encode_range({r:minR,c:minC},{r:maxR,c:maxC});
+    }
+    return XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:'',range});
+  }
+
+  function toSeconds(v){
+    if(v==null||v==='')return 0;
+    if(typeof v==='number' && isFinite(v)) return Math.max(0,v*86400);
+    if(v instanceof Date) return v.getUTCHours()*3600+v.getUTCMinutes()*60+v.getUTCSeconds();
+    const s=String(v).trim();
+    let m=s.match(/^(?:(\d+)\s*d(?:ías?)?\s*)?(\d+):([0-5]?\d)(?::([0-5]?\d))?$/i);
+    if(m) return (+m[1]||0)*86400+(+m[2])*3600+(+m[3])*60+(+m[4]||0);
+    const n=Number(s.replace(',','.')); return isFinite(n)?Math.max(0,n*86400):0;
+  }
+  function toNumber(v){ if(typeof v==='number')return isFinite(v)?v:0; const n=Number(String(v||'').replace(',','.')); return isFinite(n)?n:0; }
+  function cleanLabel(v){return String(v??'').replace(/^\s+|\s+$/g,'').replace(/\s+/g,' ');}
+  function parseAgent(raw){ const s=cleanLabel(raw); const m=s.match(/^(.*?)\s*\(([^)]+@[^)]+)\)\s*$/); return m?{name:cleanLabel(m[1]),email:cleanLabel(m[2]).toLowerCase()}:{name:s,email:''}; }
+
+  function matrixToDataset(matrix,file){
+    const rows=(matrix||[]).filter((r,i)=>i<2 || (r && r.some(v=>v!==''&&v!=null)));
+    if(rows.length<6) throw new Error('No se encontró la tabla esperada de actividad de agentes.');
+    const title=cleanLabel(rows[0]?.[0]);
+    const header=rows[1]||[];
+    let totalCol=header.findIndex((v,i)=>i>0&&slug(v)==='total');
+    if(totalCol<0) totalCol=header.length;
+    const agentCols=[];
+    for(let c=1;c<totalCol;c++){ if(cleanLabel(header[c])) agentCols.push(c); }
+    if(!agentCols.length) throw new Error('No se encontraron agentes en la fila 2.');
+    const bySlug=new Map();
+    rows.forEach((r,i)=>{if(r&&cleanLabel(r[0]))bySlug.set(slug(r[0]),{row:r,index:i,label:cleanLabel(r[0])});});
+    const getRow=label=>bySlug.get(slug(label))?.row || [];
+    const range=parseTitleRange(title,file.name);
+    const dataset={id:uuid(),fileName:file.name,title,startDate:range.startDate,endDate:range.endDate,unknownRange:!!range.unknown,days:daysInclusive(range.startDate,range.endDate),agents:[],activities:new Map(),loadedAt:new Date()};
+    const activityRows=[];
+    rows.forEach((r,i)=>{
+      const lab=cleanLabel(r?.[0]);
+      if(/^--\s*duraci[oó]n\s*:/i.test(lab)){
+        const name=cleanLabel(lab.split(':').slice(1).join(':')); if(name) activityRows.push({name,row:r,index:i});
+      }
+    });
+    for(const c of agentCols){
+      const a=parseAgent(header[c]); if(!a.name)continue;
+      const ag={key:(a.email||slug(a.name)),name:a.name,email:a.email,metrics:{},activities:{},sourceDatasetId:dataset.id};
+      ag.metrics.logons=toNumber(getRow('Número de log on')[c]);
+      ag.metrics.rejections=toNumber(getRow('Perturbaciones/Rechazo agente')[c]);
+      ag.metrics.logon=toSeconds(getRow('Duración total log on')[c]);
+      ag.metrics.available=toSeconds(getRow('Duración total disponible')[c]);
+      ag.metrics.work=toSeconds(getRow('Duración de trabajo')[c]);
+      ag.metrics.attention=toSeconds(getRow('Duración de atención')[c]);
+      for(const ar of activityRows){
+        const key=slug(ar.name); const prev=rows[ar.index-1]||[];
+        const count=/^otra actividad/i.test(cleanLabel(prev[0])) ? toNumber(prev[c]) : 0;
+        const seconds=toSeconds(ar.row[c]);
+        ag.activities[key]={name:ar.name,seconds,count};
+        if(!dataset.activities.has(key))dataset.activities.set(key,ar.name);
+      }
+      dataset.agents.push(ag);
+    }
+    if(!dataset.agents.length) throw new Error('El archivo no contiene agentes válidos.');
+    return dataset;
+  }
+
+  async function parseFile(file){
+    const ext=file.name.toLowerCase().split('.').pop();
+    let matrix;
+    if(ext==='xlsx'){
+      try{ matrix=await parseXlsxRobust(file); }
+      catch(e){ matrix=await parseViaSheetJS(file); }
+    } else matrix=await parseViaSheetJS(file);
+    return matrixToDataset(matrix,file);
+  }
+
+  function selectedDatasets(){ return state.datasets.filter(d=>state.selectedFiles.has(d.id)); }
+  function allAgentCatalog(){
+    const map=new Map(); for(const ds of selectedDatasets()) for(const a of ds.agents) if(!map.has(a.key))map.set(a.key,{key:a.key,name:a.name,email:a.email});
+    return [...map.values()].sort((a,b)=>a.name.localeCompare(b.name,'es',{sensitivity:'base'}));
+  }
+  function allActivityCatalog(){
+    const map=new Map(); for(const ds of selectedDatasets()) for(const [k,n] of ds.activities) if(!map.has(k))map.set(k,n);
+    return [...map].map(([key,name])=>({key,name})).sort((a,b)=>a.name.localeCompare(b.name,'es',{sensitivity:'base'}));
+  }
+  function sumMetrics(target,src){ for(const k of ['logons','rejections','logon','available','work','attention'])target[k]=(target[k]||0)+(src[k]||0); }
+  function overlapEntries(a,b){ return a.ds.startDate<=b.ds.endDate && b.ds.startDate<=a.ds.endDate; }
+  function aggregateAgents(){
+    const ds=selectedDatasets(); const entriesByAgent=new Map();
+    for(const d of ds) for(const a of d.agents){ if(!entriesByAgent.has(a.key))entriesByAgent.set(a.key,[]); entriesByAgent.get(a.key).push({ds:d,agent:a}); }
+    const out=[];
+    for(const [key,entries] of entriesByAgent){
+      if(!state.selectedAgents.has(key))continue;
+      let chosen=entries;
+      if(state.mergeMode==='safe'){
+        const sorted=[...entries].sort((x,y)=>y.ds.days-x.ds.days || x.ds.startDate-y.ds.startDate); chosen=[];
+        for(const e of sorted) if(!chosen.some(c=>overlapEntries(e,c)))chosen.push(e);
+        chosen.sort((a,b)=>a.ds.startDate-b.ds.startDate);
+      }
+      const first=entries[0].agent; const agg={key,name:first.name,email:first.email,metrics:{logons:0,rejections:0,logon:0,available:0,work:0,attention:0},activities:{},days:0,sources:[]};
+      for(const e of chosen){
+        sumMetrics(agg.metrics,e.agent.metrics); agg.days+=e.ds.days; agg.sources.push(e.ds);
+        for(const [ak,av] of Object.entries(e.agent.activities)){
+          if(!state.selectedActivities.has(ak))continue;
+          if(!agg.activities[ak])agg.activities[ak]={name:av.name,seconds:0,count:0};
+          agg.activities[ak].seconds+=av.seconds||0; agg.activities[ak].count+=av.count||0;
+        }
+      }
+      agg.activitySeconds=Object.values(agg.activities).reduce((s,x)=>s+x.seconds,0);
+      agg.activityCount=Object.values(agg.activities).reduce((s,x)=>s+x.count,0);
+      agg.residual=Math.max(0,agg.metrics.logon-agg.metrics.available-agg.metrics.attention-agg.activitySeconds);
+      const top=Object.values(agg.activities).sort((a,b)=>b.seconds-a.seconds)[0]||{name:'—',seconds:0}; agg.topActivity=top;
+      out.push(agg);
+    }
+    return out;
+  }
+
+  function teamTotals(agents){
+    const t={logon:0,available:0,work:0,attention:0,rejections:0,logons:0,activities:0,residual:0};
+    for(const a of agents){for(const k of ['logon','available','work','attention','rejections','logons'])t[k]+=a.metrics[k]||0;t.activities+=a.activitySeconds;t.residual+=a.residual;}
+    return t;
+  }
+  function unionCoverageDays(ds){
+    if(!ds.length)return 0; const ints=ds.map(d=>[d.startDate.getTime(),d.endDate.getTime()]).sort((a,b)=>a[0]-b[0]); let total=0,[s,e]=ints[0];
+    for(let i=1;i<ints.length;i++){const [ns,ne]=ints[i];if(ns<=e+86400000)e=Math.max(e,ne);else{total+=Math.round((e-s)/86400000)+1;s=ns;e=ne;}} return total+Math.round((e-s)/86400000)+1;
+  }
+  function overlapPairs(ds=selectedDatasets()){
+    const pairs=[]; for(let i=0;i<ds.length;i++)for(let j=i+1;j<ds.length;j++)if(overlaps(ds[i],ds[j]))pairs.push([ds[i],ds[j]]); return pairs;
+  }
+  function selectedActivityTotals(agents){
+    const map=new Map(); for(const a of agents) for(const [k,v] of Object.entries(a.activities)){if(!map.has(k))map.set(k,{key:k,name:v.name,seconds:0,count:0,agents:0});const x=map.get(k);x.seconds+=v.seconds;x.count+=v.count;if(v.seconds>0)x.agents++;}
+    return [...map.values()].sort((a,b)=>b.seconds-a.seconds);
+  }
+  function metricValue(a,key){
+    if(key==='activityHours')return a.activitySeconds/3600;
+    if(key==='activityPct')return a.metrics.logon?a.activitySeconds/a.metrics.logon*100:0;
+    if(key==='attentionHours')return a.metrics.attention/3600;
+    if(key==='logonHours')return a.metrics.logon/3600;
+    if(key==='availablePct')return a.metrics.logon?a.metrics.available/a.metrics.logon*100:0;
+    return 0;
+  }
+  function metricMeta(key){ return ({activityHours:['Horas en actividades',' h'],activityPct:['% del tiempo conectado','%'],attentionHours:['Horas de atención',' h'],logonHours:['Horas conectado',' h'],availablePct:['% disponible','%']})[key]; }
+
+  function syncSelectionsAfterLoad(){
+    state.selectedFiles=new Set(state.datasets.map(d=>d.id));
+    const agents=allAgentCatalog(), acts=allActivityCatalog();
+    state.selectedAgents=new Set(agents.map(a=>a.key)); state.selectedActivities=new Set(acts.map(a=>a.key));
+    state.allAgentsSelected=state.allActivitiesSelected=state.allFilesSelected=true;
+  }
+
+  function renderPicker(id,items,selected,labelFn,keyFn){
+    const wrap=$(id), btn=wrap.querySelector('.picker-button'), list=wrap.querySelector('.picker-list'), search=wrap.querySelector('.picker-search');
+    const total=items.length, count=items.filter(x=>selected.has(keyFn(x))).length;
+    btn.textContent=count===total?`Todos (${total})`:`${count} de ${total}`;
+    const q=slug(search.value); const filtered=items.filter(x=>slug(labelFn(x)).includes(q));
+    list.innerHTML=filtered.length?filtered.map(x=>{const k=keyFn(x);const label=labelFn(x);const sub=x.email?escapeHtml(x.email):(x.startDate?escapeHtml(rangeLabel(x)):'');return `<label class="checkrow"><input type="checkbox" data-key="${escapeHtml(k)}" ${selected.has(k)?'checked':''}><span>${escapeHtml(label)}${sub?`<span class="sub">${sub}</span>`:''}</span></label>`}).join(''):'<div class="muted" style="padding:10px">Sin resultados</div>';
+  }
+  function refreshPickers(){
+    renderPicker('#filesPicker',state.datasets,state.selectedFiles,d=>d.fileName,d=>d.id);
+    renderPicker('#agentsPicker',allAgentCatalog(),state.selectedAgents,a=>a.name,a=>a.key);
+    renderPicker('#activitiesPicker',allActivityCatalog(),state.selectedActivities,a=>a.name,a=>a.key);
+  }
+
+  function chartColors(n){ const base=['#5b5bd6','#7c3aed','#0f9f9a','#3b82f6','#d97706','#64748b','#16a34a','#e11d48','#0891b2','#9333ea']; return Array.from({length:n},(_,i)=>base[i%base.length]); }
+  function destroyChart(name){ if(state.charts[name]){state.charts[name].destroy();delete state.charts[name];} }
+  function makeChart(name,ctx,config){ destroyChart(name); state.charts[name]=new Chart(ctx,config); }
+  const chartBase={responsive:true,maintainAspectRatio:false,animation:{duration:250},plugins:{legend:{labels:{usePointStyle:true,boxWidth:8,color:getComputedStyle(document.documentElement).getPropertyValue('--muted').trim()}},tooltip:{callbacks:{}}},scales:{x:{grid:{color:'rgba(148,163,184,.12)'},ticks:{color:'#78869a'}},y:{grid:{display:false},ticks:{color:'#78869a'}}}};
+
+  function renderKpis(agents,totals){
+    $('#kpiAgents').textContent=nf0.format(agents.length); $('#kpiAgentsHint').textContent=`${selectedDatasets().length} archivo(s) seleccionado(s)`;
+    $('#kpiLogon').textContent=hours(totals.logon);
+    $('#kpiActivity').textContent=hours(totals.activities); $('#kpiActivityHint').textContent=`${pct1(totals.logon?totals.activities/totals.logon*100:0)} del tiempo conectado`;
+    $('#kpiAttention').textContent=hours(totals.attention); $('#kpiAttentionHint').textContent=`${pct1(totals.logon?totals.attention/totals.logon*100:0)} del tiempo conectado`;
+    $('#kpiAvailable').textContent=hours(totals.available); $('#kpiAvailableHint').textContent=`${pct1(totals.logon?totals.available/totals.logon*100:0)} del tiempo conectado`;
+    const days=unionCoverageDays(selectedDatasets()); $('#kpiCoverage').textContent=`${nf0.format(days)} d`; $('#kpiCoverageHint').textContent=selectedDatasets().length?`${fmtDate(new Date(Math.min(...selectedDatasets().map(d=>d.startDate))))} → ${fmtDate(new Date(Math.max(...selectedDatasets().map(d=>d.endDate))))}`:'Sin periodo';
+  }
+
+  function renderAgentChart(agents){
+    const sorted=[...agents].sort((a,b)=>metricValue(b,state.rankMetric)-metricValue(a,state.rankMetric));
+    const meta=metricMeta(state.rankMetric); $('#agentChartSub').textContent=meta[0]; $('#agentCountPill').textContent=`${sorted.length} agentes`;
+    const box=$('#agentChartBox'); box.style.height=`${Math.max(300,sorted.length*34+75)}px`;
+    makeChart('agent',$('#agentChart'),{type:'bar',data:{labels:sorted.map(a=>a.name),datasets:[{label:meta[0],data:sorted.map(a=>metricValue(a,state.rankMetric)),backgroundColor:sorted.map((_,i)=>i<3?'#5b5bd6':'rgba(91,91,214,.45)'),borderRadius:6,borderSkipped:false}]},options:{...chartBase,indexAxis:'y',plugins:{...chartBase.plugins,legend:{display:false},tooltip:{callbacks:{label:c=>`${nf1.format(c.raw)}${meta[1]}`}}},scales:{x:{...chartBase.scales.x,beginAtZero:true,ticks:{...chartBase.scales.x.ticks,callback:v=>`${v}${meta[1]==='%'?'%':''}`}},y:{...chartBase.scales.y,ticks:{...chartBase.scales.y.ticks,autoSkip:false}}}}});
+    return sorted;
+  }
+  function renderActivityChart(agents){
+    const vals=selectedActivityTotals(agents).filter(x=>x.seconds>0); const box=$('#activityChartBox'); box.style.height=`${Math.max(300,vals.length*34+75)}px`;
+    makeChart('activity',$('#activityChart'),{type:'bar',data:{labels:vals.map(x=>x.name),datasets:[{label:'Horas',data:vals.map(x=>x.seconds/3600),backgroundColor:chartColors(vals.length),borderRadius:6,borderSkipped:false}]},options:{...chartBase,indexAxis:'y',plugins:{...chartBase.plugins,legend:{display:false},tooltip:{callbacks:{label:c=>`${nf1.format(c.raw)} h`}}},scales:{x:{...chartBase.scales.x,beginAtZero:true,title:{display:true,text:'Horas',color:'#78869a'}},y:{...chartBase.scales.y,ticks:{...chartBase.scales.y.ticks,autoSkip:false}}}}});
+  }
+  function renderComposition(agents){
+    const sorted=[...agents].sort((a,b)=>b.metrics.logon-a.metrics.logon); const box=$('#compositionChartBox'); box.style.height=`${Math.max(300,sorted.length*34+75)}px`;
+    const ds=[['Disponible',a=>a.metrics.available,'#0f9f9a'],['Atención',a=>a.metrics.attention,'#3b82f6'],['Actividades',a=>a.activitySeconds,'#7c3aed'],['Resto / no seleccionado',a=>a.residual,'#cbd5e1']].map(([label,fn,color])=>({label,data:sorted.map(a=>fn(a)/3600),backgroundColor:color,borderWidth:0}));
+    makeChart('composition',$('#compositionChart'),{type:'bar',data:{labels:sorted.map(a=>a.name),datasets:ds},options:{...chartBase,indexAxis:'y',plugins:{...chartBase.plugins,tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${nf1.format(c.raw)} h`}}},scales:{x:{...chartBase.scales.x,stacked:true,beginAtZero:true},y:{...chartBase.scales.y,stacked:true,ticks:{...chartBase.scales.y.ticks,autoSkip:false}}}}});
+  }
+
+  function renderInsights(agents,totals){
+    if(!agents.length){$('#insights').innerHTML='<div class="muted">No hay datos con los filtros actuales.</div>';return;}
+    const byAct=[...agents].sort((a,b)=>b.activitySeconds-a.activitySeconds); const byPct=[...agents].sort((a,b)=>(b.activitySeconds/(b.metrics.logon||1))-(a.activitySeconds/(a.metrics.logon||1)));
+    const acts=selectedActivityTotals(agents).filter(a=>a.seconds>0); const topAct=acts[0];
+    const topAgent=byAct[0], topPct=byPct[0]; const median=[...agents].map(a=>a.activitySeconds/(a.metrics.logon||1)*100).sort((a,b)=>a-b)[Math.floor(agents.length/2)]||0;
+    const cards=[];
+    if(topAct) cards.push(`<div class="insight"><b><span class="dot"></span>Actividad con más tiempo</b><span>${escapeHtml(topAct.name)} acumula <strong>${hours(topAct.seconds)}</strong> (${pct1(totals.activities?topAct.seconds/totals.activities*100:0)} de las otras actividades).</span></div>`);
+    if(topAgent) cards.push(`<div class="insight"><b><span class="dot"></span>Mayor volumen absoluto</b><span>${escapeHtml(topAgent.name)} registra <strong>${hours(topAgent.activitySeconds)}</strong> en actividades.</span></div>`);
+    if(topPct) cards.push(`<div class="insight"><b><span class="dot"></span>Mayor peso relativo</b><span>${escapeHtml(topPct.name)} dedica <strong>${pct1(topPct.metrics.logon?topPct.activitySeconds/topPct.metrics.logon*100:0)}</strong> de su tiempo conectado a actividades.</span></div>`);
+    cards.push(`<div class="insight"><b><span class="dot"></span>Referencia del equipo</b><span>La mediana de tiempo en actividades es <strong>${pct1(median)}</strong> del tiempo conectado por agente.</span></div>`);
+    $('#insights').innerHTML=cards.join('');
+  }
+
+  function effectivePeriod(a){ if(!a.sources.length)return '—'; return a.sources.length===1?rangeLabel(a.sources[0]):`${a.sources.length} periodos · ${a.days} d`; }
+  function renderAgentTables(sorted){
+    $('#agentTableBody').innerHTML=sorted.map(a=>`<tr><td><strong>${escapeHtml(a.name)}</strong><div class="muted" style="font-size:11px">${escapeHtml(a.email)}</div></td><td>${escapeHtml(effectivePeriod(a))}</td><td>${hours(a.metrics.logon)}</td><td>${hours(a.metrics.available)}</td><td>${hours(a.metrics.attention)}</td><td>${hours(a.activitySeconds)}</td><td>${pct1(a.metrics.logon?a.activitySeconds/a.metrics.logon*100:0)}</td><td>${escapeHtml(a.topActivity.name)}</td><td>${hours(a.topActivity.seconds)}</td><td>${nf0.format(a.metrics.rejections||0)}</td></tr>`).join('');
+    $('#rawTableBody').innerHTML=sorted.map(a=>`<tr><td><strong>${escapeHtml(a.name)}</strong></td><td>${escapeHtml(a.email)}</td><td>${nf0.format(a.days)}</td><td>${nf1.format(a.metrics.logon/3600)}</td><td>${nf1.format(a.metrics.available/3600)}</td><td>${nf1.format(a.metrics.attention/3600)}</td><td>${nf1.format(a.activitySeconds/3600)}</td><td>${pct1(a.metrics.logon?a.activitySeconds/a.metrics.logon*100:0)}</td><td>${escapeHtml(a.topActivity.name)}</td><td>${nf1.format(a.topActivity.seconds/3600)}</td></tr>`).join('');
+  }
+
+  function renderHeatmap(agents){
+    const acts=selectedActivityTotals(agents).filter(x=>state.selectedActivities.has(x.key)); const metric=$('#heatMetric').value;
+    const value=(a,k)=>{const s=a.activities[k]?.seconds||0;if(metric==='hours')return s/3600;if(metric==='pct')return a.metrics.logon?s/a.metrics.logon*100:0;return a.days?s/60/a.days:0;};
+    let max=0; for(const a of agents)for(const act of acts)max=Math.max(max,value(a,act.key));
+    const fmt=v=>metric==='hours'?`${nf1.format(v)} h`:metric==='pct'?pct1(v):`${nf1.format(v)} min`;
+    let html='<table class="heat"><thead><tr><th>Agente</th>'+acts.map(x=>`<th title="${escapeHtml(x.name)}">${escapeHtml(x.name)}</th>`).join('')+'</tr></thead><tbody>';
+    for(const a of [...agents].sort((x,y)=>y.activitySeconds-x.activitySeconds)){
+      html+=`<tr><td class="agent"><strong>${escapeHtml(a.name)}</strong><span>${hours(a.activitySeconds)} en actividades</span></td>`;
+      for(const act of acts){const v=value(a,act.key),ratio=max?v/max:0,alpha=.04+Math.pow(ratio,.7)*.82;const fg=ratio>.58?'#fff':'var(--text)';html+=`<td title="${escapeHtml(a.name)} · ${escapeHtml(act.name)}: ${fmt(v)}" style="background:rgba(var(--heat-rgb),${alpha});color:${fg}">${v?fmt(v):'—'}</td>`;} html+='</tr>';
+    }
+    html+='</tbody></table>'; $('#heatContainer').innerHTML=acts.length&&agents.length?html:'<div class="muted" style="padding:24px">Selecciona agentes y actividades para ver el mapa de calor.</div>';
+  }
+
+  function datasetSummary(ds){
+    const agents=ds.agents.filter(a=>state.selectedAgents.has(a.key)); const t={logon:0,available:0,attention:0,activities:0};
+    for(const a of agents){t.logon+=a.metrics.logon;t.available+=a.metrics.available;t.attention+=a.metrics.attention;for(const [k,v] of Object.entries(a.activities))if(state.selectedActivities.has(k))t.activities+=v.seconds;}
+    return {agents,t};
+  }
+  function renderPeriods(){
+    const ds=selectedDatasets().slice().sort((a,b)=>a.startDate-b.startDate||a.endDate-b.endDate); const metric=$('#periodMetric').value; const vals=[];
+    for(const d of ds){const s=datasetSummary(d);let v=0;if(metric==='activityPct')v=s.t.logon?s.t.activities/s.t.logon*100:0;else if(metric==='activityHoursPerAgent')v=s.agents.length?s.t.activities/3600/s.agents.length:0;else if(metric==='attentionPct')v=s.t.logon?s.t.attention/s.t.logon*100:0;else v=s.t.logon?s.t.available/s.t.logon*100:0;vals.push({d,s,v});}
+    const suffix=metric==='activityHoursPerAgent'?' h':'%'; $('#periodChartBox').style.height=`${Math.max(320,vals.length*44+100)}px`;
+    makeChart('period',$('#periodChart'),{type:'bar',data:{labels:vals.map(x=>rangeLabel(x.d)),datasets:[{label:$('#periodMetric').selectedOptions[0].textContent,data:vals.map(x=>x.v),backgroundColor:chartColors(vals.length),borderRadius:7,borderSkipped:false}]},options:{...chartBase,indexAxis:'y',plugins:{...chartBase.plugins,legend:{display:false},tooltip:{callbacks:{label:c=>`${nf1.format(c.raw)}${suffix}`}}},scales:{x:{...chartBase.scales.x,beginAtZero:true},y:{...chartBase.scales.y,ticks:{...chartBase.scales.y.ticks,autoSkip:false}}}}});
+    const pairs=overlapPairs(ds); const overlapSet=new Set(pairs.flatMap(p=>p.map(d=>d.id)));
+    $('#periodTableBody').innerHTML=vals.map(({d,s})=>`<tr><td><strong>${escapeHtml(d.fileName)}</strong></td><td>${escapeHtml(rangeLabel(d))}</td><td>${d.days}</td><td>${s.agents.length}</td><td>${hours(s.t.logon)}</td><td>${hours(s.t.activities)}</td><td>${pct1(s.t.logon?s.t.activities/s.t.logon*100:0)}</td><td>${hours(s.t.attention)}</td><td>${overlapSet.has(d.id)?'<span class="pill warn">Solapa</span>':'<span class="pill ok">Sin solape</span>'}</td></tr>`).join('');
+    $('#fileCards').innerHTML=state.datasets.map(d=>`<div class="file-card"><div class="file-icon">X</div><div><b>${escapeHtml(d.fileName)}</b><span>${escapeHtml(rangeLabel(d))} · ${d.agents.length} agentes · ${d.days} días</span></div><button class="remove" data-remove="${d.id}" title="Quitar archivo">×</button></div>`).join('');
+  }
+
+  function renderOverlapNotice(){
+    const pairs=overlapPairs(); const el=$('#overlapNotice'); if(!pairs.length){el.classList.add('hidden');return;} el.classList.remove('hidden');
+    $('#overlapText').textContent=state.mergeMode==='safe'?`El modo actual evita doble conteo por agente, priorizando el periodo más amplio cuando dos archivos se superponen. Se han detectado ${pairs.length} cruce(s).`:`Estás sumando archivos solapados: los totales pueden duplicar tiempo. Se han detectado ${pairs.length} cruce(s).`;
+  }
+
+  function renderAll(){
+    if(!state.datasets.length){$('#emptyState').classList.remove('hidden');$('#dashboard').classList.add('hidden');return;}
+    $('#emptyState').classList.add('hidden');$('#dashboard').classList.remove('hidden'); refreshPickers(); renderOverlapNotice();
+    const agents=aggregateAgents(); const totals=teamTotals(agents); renderKpis(agents,totals); const sorted=renderAgentChart(agents); renderActivityChart(agents); renderComposition(agents); renderInsights(agents,totals); renderAgentTables(sorted); renderHeatmap(agents); renderPeriods();
+  }
+
+  function openModal(){ $('#uploadModal').classList.remove('hidden'); }
+  function closeModal(){ $('#uploadModal').classList.add('hidden'); }
+  async function handleFiles(files){
+    const list=[...files].filter(f=>/\.(xlsx|xls)$/i.test(f.name)); if(!list.length)return;
+    const q=$('#uploadQueue'); $('#modalStatus').innerHTML='<span class="spinner"></span> Procesando';
+    for(const file of list){
+      const row=document.createElement('div');row.className='queue-row';row.innerHTML=`<div><strong>${escapeHtml(file.name)}</strong><small>Analizando estructura…</small></div><span class="spinner"></span>`;q.prepend(row);
+      try{
+        const ds=await parseFile(file); state.datasets.push(ds); row.innerHTML=`<div><strong>${escapeHtml(file.name)}</strong><small>${escapeHtml(rangeLabel(ds))} · ${ds.agents.length} agentes · ${ds.activities.size} actividades</small></div><span class="pill ok">Listo</span>`;
+      }catch(err){ row.classList.add('error');row.innerHTML=`<div><strong>${escapeHtml(file.name)}</strong><small>${escapeHtml(err.message||String(err))}</small></div><span class="pill warn">Error</span>`; }
+    }
+    syncSelectionsAfterLoad(); $('#modalStatus').textContent=`${state.datasets.length} archivo(s) cargado(s)`; renderAll();
+  }
+
+  function csvCell(v){const s=String(v??'');return /[";\n]/.test(s)?`"${s.replace(/"/g,'""')}"`:s;}
+  function exportCSV(){
+    const agents=aggregateAgents().sort((a,b)=>b.activitySeconds-a.activitySeconds); const rows=[['Agente','Email','Días efectivos','Conectado h','Disponible h','Atención h','Actividades h','% actividades','Actividad principal','Principal h','Rechazos']];
+    for(const a of agents)rows.push([a.name,a.email,a.days,(a.metrics.logon/3600).toFixed(2),(a.metrics.available/3600).toFixed(2),(a.metrics.attention/3600).toFixed(2),(a.activitySeconds/3600).toFixed(2),(a.metrics.logon?a.activitySeconds/a.metrics.logon*100:0).toFixed(2),a.topActivity.name,(a.topActivity.seconds/3600).toFixed(2),a.metrics.rejections]);
+    const blob=new Blob(['\ufeff'+rows.map(r=>r.map(csvCell).join(';')).join('\n')],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='actividad_agentes_consolidado.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  }
+
+  function setupPicker(id,type){
+    const wrap=$(id); const btn=wrap.querySelector('.picker-button'); btn.addEventListener('click',e=>{e.stopPropagation();$$('.picker-wrap').filter(x=>x!==wrap).forEach(x=>x.classList.remove('open'));wrap.classList.toggle('open');});
+    wrap.querySelector('.picker-search').addEventListener('input',()=>refreshPickers());
+    wrap.querySelector('.picker-list').addEventListener('change',e=>{if(!e.target.matches('input[type=checkbox]'))return;const key=e.target.dataset.key;const set=type==='files'?state.selectedFiles:type==='agents'?state.selectedAgents:state.selectedActivities;if(e.target.checked)set.add(key);else set.delete(key);renderAll();});
+    wrap.querySelector('.all').addEventListener('click',e=>{e.preventDefault();if(type==='files')state.selectedFiles=new Set(state.datasets.map(d=>d.id));else if(type==='agents')state.selectedAgents=new Set(allAgentCatalog().map(a=>a.key));else state.selectedActivities=new Set(allActivityCatalog().map(a=>a.key));renderAll();});
+    wrap.querySelector('.none').addEventListener('click',e=>{e.preventDefault();if(type==='files')state.selectedFiles.clear();else if(type==='agents')state.selectedAgents.clear();else state.selectedActivities.clear();renderAll();});
+  }
+
+  $('#openUpload').onclick=openModal; $('#emptyUpload').onclick=openModal; $('#closeUpload').onclick=closeModal; $('#browseBtn').onclick=()=>$('#fileInput').click(); $('#fileInput').onchange=e=>handleFiles(e.target.files);
+  $('#uploadModal').addEventListener('click',e=>{if(e.target.id==='uploadModal')closeModal();});
+  const dz=$('#dropzone'); ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('drag');})); ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('drag');})); dz.addEventListener('drop',e=>handleFiles(e.dataTransfer.files));
+  setupPicker('#filesPicker','files'); setupPicker('#agentsPicker','agents'); setupPicker('#activitiesPicker','activities'); document.addEventListener('click',()=>$$('.picker-wrap').forEach(x=>x.classList.remove('open'))); $$('.picker-panel').forEach(p=>p.addEventListener('click',e=>e.stopPropagation()));
+  $('#mergeMode').onchange=e=>{state.mergeMode=e.target.value;renderAll();}; $('#rankMetric').onchange=e=>{state.rankMetric=e.target.value;renderAll();}; $('#heatMetric').onchange=()=>renderHeatmap(aggregateAgents()); $('#periodMetric').onchange=renderPeriods;
+  $('#exportBtn').onclick=exportCSV; $('#exportBtn2').onclick=exportCSV;
+  $('#fileCards').addEventListener('click',e=>{const id=e.target.dataset.remove;if(!id)return;state.datasets=state.datasets.filter(d=>d.id!==id);syncSelectionsAfterLoad();renderAll();});
+  $('#tabs').addEventListener('click',e=>{const b=e.target.closest('.tab');if(!b)return;$$('.tab').forEach(x=>x.classList.toggle('active',x===b));$$('.view').forEach(v=>v.classList.toggle('active',v.id===`view-${b.dataset.view}`));state.activeView=b.dataset.view;setTimeout(()=>Object.values(state.charts).forEach(c=>c.resize()),30);});
+  $('#themeBtn').onclick=()=>{const html=document.documentElement;html.dataset.theme=html.dataset.theme==='dark'?'light':'dark';localStorage.setItem('odigo-theme',html.dataset.theme);renderAll();};
+  const savedTheme=localStorage.getItem('odigo-theme'); if(savedTheme)document.documentElement.dataset.theme=savedTheme;
+  window.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();$$('.picker-wrap').forEach(x=>x.classList.remove('open'));}});
+})();
+</script>
+</body>
+</html>
